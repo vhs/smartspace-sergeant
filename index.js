@@ -1,6 +1,6 @@
 const MQTT = require('async-mqtt')
 
-const silence_times = {
+const quietTimes = {
   '0': { 10: 'green', 18: 'orange', 20: 'red' },
   '1': { 8: 'green', 20: 'orange', 22: 'red' },
   '2': { 8: 'green', 20: 'orange', 22: 'red' },
@@ -16,34 +16,27 @@ const handleError = async (msg) => {
   process.exit()
 }
 
-const onConnect = async () => {
-  console.log('onConnect', 'Online')
-  console.log('onConnect', 'Subscribing to topics...')
-  MQTT_SUB.split(';').forEach(function (subscription) {
-    var { eventTopic, eventName } = subscription.split(':')
-    console.log('onConnect','Subscribing to', eventTopic, '=>', eventName)
-    topics[eventTopic] = eventName
-    client.subscribe(eventTopic)
-  })
-}
-
-const onMessage = async (topic, message, packet) => {
-  console.log('onMessage', 'Handling', topic, '=>', message)
-  if (topics.hasOwnproperty(topic)) { await client.publish(MQTT_TOPIC, topics[topic]) }
-}
-
-const updateStatus = async () => {
+const updateStatus = async (overrideStatus) => {
   console.log('updateStatus', 'Running ...')
   try {
     var newStatus = 'red'
-    var d = new Date()
-    var dow = d.getDay()
-    var hod = d.getHours()
-    Object.keys(silence_times[dow]).forEach(function (slot) {
-      if (hod > silence_times[dow][slot]) { newStatus = silence_times[dow][hod] }
-    })
-    if (newStatus !== lastStatus || MQTT_INTERVAL) {
-      console.log('updateStatus', 'Updating from', lastStatus, 'to', newStatus)
+    if (overrideStatus !== undefined) {
+      console.log('updateStatus', 'Overriding status to:', overrideStatus)
+      newStatus = overrideStatus
+    } else {
+      console.log('updateStatus', 'Checking window')
+      var d = new Date()
+      var dow = d.getDay()
+      var hod = d.getHours()
+      Object.keys(quietTimes[dow]).forEach(function (slot) {
+        if (hod > quietTimes[dow][slot]) {
+          console.log('updateStatus', 'Found window for:', hod, '/', slot)
+          newStatus = quietTimes[dow][slot]
+        }
+      })
+    }
+    if (newStatus !== lastStatus || ((Date.now() - lastUpdateSent) > MQTT_INTERVAL)) {
+      console.log('updateStatus', 'Updating from', lastStatus, 'to', newStatus, '-', ((Date.now() - lastUpdateSent) > MQTT_INTERVAL))
       await client.publish(MQTT_TOPIC, newStatus)
       lastStatus = newStatus
       lastUpdateSent = Date.now()
@@ -53,14 +46,33 @@ const updateStatus = async () => {
   }
 }
 
+const onConnect = async () => {
+  console.log('onConnect', 'Online')
+  console.log('onConnect', 'Subscribing to topics:')
+  console.log('onConnect', MQTT_SUB)
+  MQTT_SUB.split(';').forEach(function (subscription) {
+    let subscriptionDetails = subscription.split(':')
+    console.log('onConnect', 'Subscribing to', subscriptionDetails[0], '=>', subscriptionDetails[1])
+    topics[subscriptionDetails[0]] = subscriptionDetails[1]
+    client.subscribe(subscriptionDetails[0])
+  })
+}
+
+const onMessage = async (topic, message, packet) => {
+  console.log('onMessage', 'Handling', topic, '=>', message)
+  if (topics.hasOwnproperty(topic)) {
+    updateStatus(topics[topic])
+  }
+}
+
 // Main
 const MQTT_URI = process.env.MQTT_URI || handleError('Missing MQTT_URI')
 const MQTT_SUB = process.env.MQTT_SUB || handleError('Missing MQTT_SUB')
 const MQTT_TOPIC = process.env.MQTT_TOPIC || handleError('Missing MQTT_TOPIC')
-const MQTT_INTERVAL = process.env.MQTT_INTERVAL ? () => { return ((Date.now() - lastUpdateSent) > process.env.MQTT_INTERVAL) } : false
+const MQTT_INTERVAL = process.env.MQTT_INTERVAL ? parseInt(process.env.MQTT_INTERVAL) : 60000
 
-var lastStatus = ''
-var lastUpdateSent = 0
+var lastStatus = 'red'
+var lastUpdateSent = Date.now()
 
 var topics = {}
 

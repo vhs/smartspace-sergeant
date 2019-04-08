@@ -12,9 +12,9 @@ docker run \
   --rm \
   --name vhs-sergeant \
   -e MQTT_URI=tcp://test.mosquitto.org:1883/ \
-  -e MQTT_SUB="/test/events/phone/ring:phone" \
+  -e MQTT_SUB=/test/events/phone/ring:phone \
   -e MQTT_TOPIC=/test/status/space/sergeant \
-  -e MQTT_INTERVAL=5000 \
+  -e MQTT_INTERVAL=60000 \
   -e TZ=America/Vancouver \
   -v `pwd`:/app \
   local/vhs-sergeant
