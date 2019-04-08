@@ -1,0 +1,23 @@
+{
+  "name": "vhs-sergeant",
+  "version": "1.0.0",
+  "description": "SmartSpace Sergeant will yell at you, in MQTT and JSON",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.1.1",
+    "eslint-plugin-standard": "^4.0.0"
+  },
+  "dependencies": {
+    "async-mqtt": "^2.2.1"
+  }
+}
