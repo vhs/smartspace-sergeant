@@ -10,6 +10,10 @@ const quietTimes = {
   '6': { 10: 'green', 18: 'orange', 20: 'red' }
 }
 
+var curDate = new Date()
+var dayOfWeek = 0
+var hourOfDay = 0
+
 // Functions
 const handleError = async (msg) => {
   console.log(msg)
@@ -19,24 +23,24 @@ const handleError = async (msg) => {
 const updateStatus = async (overrideStatus) => {
   console.log('updateStatus', 'Running ...')
   try {
-    var newStatus = 'red'
+    let forceUpdate = ((Date.now() - lastUpdateSent) > MQTT_INTERVAL)
     if (overrideStatus !== undefined) {
       console.log('updateStatus', 'Overriding status to:', overrideStatus)
       newStatus = overrideStatus
-    } else {
-      console.log('updateStatus', 'Checking window')
-      var d = new Date()
-      var dow = d.getDay()
-      var hod = d.getHours()
-      Object.keys(quietTimes[dow]).forEach(function (slot) {
-        if (hod > quietTimes[dow][slot]) {
-          console.log('updateStatus', 'Found window for:', hod, '/', slot)
-          newStatus = quietTimes[dow][slot]
+    } else if (forceUpdate) {
+      console.log('updateStatus', 'Checking window...')
+      curDate = new Date()
+      dayOfWeek = curDate.getDay()
+      hourOfDay = curDate.getHours()
+      Object.keys(quietTimes[dayOfWeek]).forEach(function (slot) {
+        if (hourOfDay > slot) {
+          console.log('updateStatus', 'Found window for:', hourOfDay, '/', slot)
+          newStatus = quietTimes[dayOfWeek][slot]
         }
       })
     }
-    if (newStatus !== lastStatus || ((Date.now() - lastUpdateSent) > MQTT_INTERVAL)) {
-      console.log('updateStatus', 'Updating from', lastStatus, 'to', newStatus, '-', ((Date.now() - lastUpdateSent) > MQTT_INTERVAL))
+    if (newStatus !== lastStatus || forceUpdate) {
+      console.log('updateStatus', 'Updating from', lastStatus, 'to', newStatus, '-', forceUpdate)
       await client.publish(MQTT_TOPIC, newStatus)
       lastStatus = newStatus
       lastUpdateSent = Date.now()
@@ -71,8 +75,9 @@ const MQTT_SUB = process.env.MQTT_SUB || handleError('Missing MQTT_SUB')
 const MQTT_TOPIC = process.env.MQTT_TOPIC || handleError('Missing MQTT_TOPIC')
 const MQTT_INTERVAL = process.env.MQTT_INTERVAL ? parseInt(process.env.MQTT_INTERVAL) : 60000
 
+var newStatus = 'red'
 var lastStatus = 'red'
-var lastUpdateSent = Date.now()
+var lastUpdateSent = (Date.now() - MQTT_INTERVAL - 1)
 
 var topics = {}
 
@@ -81,4 +86,6 @@ const client = MQTT.connect(MQTT_URI)
 client.on('connect', onConnect)
 client.on('message', onMessage)
 
-setInterval(updateStatus, 1000)
+// Start
+updateStatus()
+setInterval(updateStatus, 15000)
