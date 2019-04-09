@@ -33,7 +33,7 @@ const updateStatus = async (overrideStatus) => {
       dayOfWeek = curDate.getDay()
       hourOfDay = curDate.getHours()
       Object.keys(quietTimes[dayOfWeek]).forEach(function (slot) {
-        if (hourOfDay > slot) {
+        if (hourOfDay >= slot) {
           console.log('updateStatus', 'Found window for:', hourOfDay, '/', slot)
           newStatus = quietTimes[dayOfWeek][slot]
         }
