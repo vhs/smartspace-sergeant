@@ -20,8 +20,7 @@ const handleError = async (msg) => {
   process.exit()
 }
 
-var superStatus = false
-var superStatusCount = 0
+var superStatus = 0
 
 const updateStatus = async (overrideStatus) => {
   console.log('updateStatus', 'Running ...')
@@ -31,13 +30,12 @@ const updateStatus = async (overrideStatus) => {
     if (overrideStatus !== undefined) {
       console.log('updateStatus', 'Overriding status to:', overrideStatus)
       newStatus = overrideStatus
-      superStatus = true
+      superStatus = 1
     }
     if (superStatus) {
-      superStatusCount++
-      if (superStatusCount > 2) {
-        superStatus = false
-        superStatusCount = 0
+      superStatus++
+      if (superStatus > 2) {
+        superStatus = 0
         newStatus = 'red'
         forceUpdate = true
       }
