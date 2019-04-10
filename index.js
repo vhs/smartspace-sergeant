@@ -20,15 +20,31 @@ const handleError = async (msg) => {
   process.exit()
 }
 
+var superStatus = false
+var superStatusCount = 0
+
 const updateStatus = async (overrideStatus) => {
   console.log('updateStatus', 'Running ...')
+
   try {
     let forceUpdate = ((Date.now() - lastUpdateSent) > MQTT_INTERVAL)
     if (overrideStatus !== undefined) {
       console.log('updateStatus', 'Overriding status to:', overrideStatus)
       newStatus = overrideStatus
-    } else if (forceUpdate) {
+      superStatus = true
+    }
+    if (superStatus) {
+      superStatusCount++
+      if (superStatusCount > 2) {
+        superStatus = false
+        superStatusCount = 0
+        newStatus = 'red'
+        forceUpdate = true
+      }
+    }
+    if (forceUpdate) {
       console.log('updateStatus', 'Checking window...')
+      newStatus = 'red'
       curDate = new Date()
       dayOfWeek = curDate.getDay()
       hourOfDay = curDate.getHours()
