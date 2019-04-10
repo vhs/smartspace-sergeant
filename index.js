@@ -60,12 +60,15 @@ const onConnect = async () => {
     topics[subscriptionDetails[0]] = subscriptionDetails[1]
     client.subscribe(subscriptionDetails[0])
   })
+  console.log('onConnect', 'Subscribed to topics:', topics)
 }
 
 const onMessage = async (topic, message, packet) => {
   console.log('onMessage', 'Handling', topic, '=>', message)
-  if (topics.hasOwnproperty(topic)) {
+  if (topics[topic] !== undefined) {
     updateStatus(topics[topic])
+  } else {
+    console.log('onMessage', 'Missing topic', topic)
   }
 }
 
