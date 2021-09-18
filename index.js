@@ -2,11 +2,11 @@ const MQTT = require('async-mqtt')
 
 const quietTimes = {
   '0': { 10: 'green', 18: 'orange', 20: 'red' },
-  '1': { 8: 'green', 20: 'orange', 22: 'red' },
-  '2': { 8: 'green', 20: 'orange', 22: 'red' },
-  '3': { 8: 'green', 20: 'orange', 22: 'red' },
-  '4': { 8: 'green', 20: 'orange', 22: 'red' },
-  '5': { 8: 'green', 20: 'orange', 22: 'red' },
+  '1': { 8: 'green', 18: 'orange', 20: 'red' },
+  '2': { 8: 'green', 18: 'orange', 20: 'red' },
+  '3': { 8: 'green', 18: 'orange', 20: 'red' },
+  '4': { 8: 'green', 18: 'orange', 20: 'red' },
+  '5': { 8: 'green', 18: 'orange', 20: 'red' },
   '6': { 10: 'green', 18: 'orange', 20: 'red' }
 }
 
