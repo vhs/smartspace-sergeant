@@ -14,24 +14,26 @@ var curDate = new Date()
 var dayOfWeek = 0
 var hourOfDay = 0
 
+var superStatus = 0
+
 // Functions
-const handleError = async (msg) => {
+const handleError = (msg) => {
   console.log(msg)
   process.exit()
 }
-
-var superStatus = 0
 
 const updateStatus = async (overrideStatus) => {
   console.log('updateStatus', 'Running ...')
 
   try {
     let forceUpdate = ((Date.now() - lastUpdateSent) > MQTT_INTERVAL)
+
     if (overrideStatus !== undefined) {
       console.log('updateStatus', 'Overriding status to:', overrideStatus)
       newStatus = overrideStatus
       superStatus = 1
     }
+
     if (superStatus) {
       superStatus++
       if (superStatus > 2) {
@@ -40,22 +42,28 @@ const updateStatus = async (overrideStatus) => {
         forceUpdate = true
       }
     }
+
     if (forceUpdate) {
       console.log('updateStatus', 'Checking window...')
+
       newStatus = 'red'
       curDate = new Date()
       dayOfWeek = curDate.getDay()
       hourOfDay = curDate.getHours()
+
       Object.keys(quietTimes[dayOfWeek]).forEach(function (slot) {
         if (hourOfDay >= slot) {
           console.log('updateStatus', 'Found window for:', hourOfDay, '/', slot)
+
           newStatus = quietTimes[dayOfWeek][slot]
         }
       })
     }
     if (newStatus !== lastStatus || forceUpdate) {
       console.log('updateStatus', 'Updating from', lastStatus, 'to', newStatus, '-', forceUpdate)
+
       await client.publish(MQTT_TOPIC, newStatus)
+
       lastStatus = newStatus
       lastUpdateSent = Date.now()
     }
@@ -68,17 +76,26 @@ const onConnect = async () => {
   console.log('onConnect', 'Online')
   console.log('onConnect', 'Subscribing to topics:')
   console.log('onConnect', MQTT_SUB)
-  MQTT_SUB.split(';').forEach(function (subscription) {
+
+  MQTT_SUB.split(';').forEach((subscription) => {
     let subscriptionDetails = subscription.split(':')
+
     console.log('onConnect', 'Subscribing to', subscriptionDetails[0], '=>', subscriptionDetails[1])
+
     topics[subscriptionDetails[0]] = subscriptionDetails[1]
+
     client.subscribe(subscriptionDetails[0])
   })
+
   console.log('onConnect', 'Subscribed to topics:', topics)
+
+  console.log('onConnect', 'Forcing initial update')
+  updateStatus()
 }
 
 const onMessage = async (topic, message, packet) => {
   console.log('onMessage', 'Handling', topic, '=>', message)
+
   if (topics[topic] !== undefined) {
     updateStatus(topics[topic])
   } else {
@@ -90,7 +107,7 @@ const onMessage = async (topic, message, packet) => {
 const MQTT_URI = process.env.MQTT_URI || handleError('Missing MQTT_URI')
 const MQTT_SUB = process.env.MQTT_SUB || handleError('Missing MQTT_SUB')
 const MQTT_TOPIC = process.env.MQTT_TOPIC || handleError('Missing MQTT_TOPIC')
-const MQTT_INTERVAL = process.env.MQTT_INTERVAL ? parseInt(process.env.MQTT_INTERVAL) : 60000
+const MQTT_INTERVAL = process.env.MQTT_INTERVAL !== undefined && parseInt(process.env.MQTT_INTERVAL) ? (parseInt(process.env.MQTT_INTERVAL) < 1000) ? parseInt(process.env.MQTT_INTERVAL) * 1000 : parseInt(process.env.MQTT_INTERVAL) : 60000
 
 var newStatus = 'red'
 var lastStatus = 'red'
@@ -104,5 +121,4 @@ client.on('connect', onConnect)
 client.on('message', onMessage)
 
 // Start
-updateStatus()
 setInterval(updateStatus, 15000)
