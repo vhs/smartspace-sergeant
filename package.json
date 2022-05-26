@@ -19,7 +19,7 @@
     },
     "dependencies": {
         "async-mqtt": "^2.6.2",
-        "convict": "^6.2.2",
+        "convict": "^6.2.3",
         "debug": "^4.3.4",
         "dotenv": "^16.0.0"
     }
