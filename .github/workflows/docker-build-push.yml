@@ -2,13 +2,13 @@ name: Docker Image CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "master", "trunk"]
     tags: ["v*"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
-  build:
+  build-push:
+    if: ${{ github.event_name != 'pull_request' }}
+
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +22,6 @@ jobs:
           images: ${{ secrets.DOCKERHUB_TEMPLATE }}
 
       - name: Login to DockerHub
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
